@@ -25,4 +25,4 @@ if [ "$1" == "help" ]; then
     exit 0
 fi
 
-make flash FLASH=$FLASH USB=$USB
+make flash FLASH=$FLASH USB=$USB RATE=$RATE

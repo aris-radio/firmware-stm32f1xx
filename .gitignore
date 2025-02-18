@@ -3,3 +3,14 @@ bin/
 .DS_Store
 
 source/startup_*.s
+
+
+__MACOSX/
+
+.installed
+
+
+lib/**/include/
+lib/**/source
+
+*.zip
