@@ -17,30 +17,45 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ******************************************************************************
- * @file    err_handle.h
- * @brief   Error handling functions for ARIS Radio
+ * @file    lora_comm_spi.h
+ * @brief   LoRa communication via SPI
  * @author  ARIS Alliance
  *
  */
 
-#ifndef __ERR_HANDLE_H
-#define __ERR_HANDLE_H
+#ifndef __LORA_COMM_SPI_H
+#define __LORA_COMM_SPI_H
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-    /**
-     * @brief  This function is executed in case of an error occurrence.
-     *         It is declared static by default (file scope).
-     * @param  None
-     * @retval None
-     */
-    void Error_Handler(void);
+// Frequency defines
+#define LORA_FREQ_433 433000000
+#define LORA_FREQ_868 868000000
+
+typedef enum {
+    LORA_433MHz,
+    LORA_868MHz
+} LoRa_Module_t;
+
+
+/**
+ * @brief  Resets the LoRa module. For frequency 433 MHz.
+ * @retval None
+ */
+void LoRa_Reset433(void);
+
+/**
+ * @brief  Resets the LoRa module. For frequency 868 MHz.
+ * @retval None
+ */
+void LoRa_Reset868(void);
+
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __ERR_HANDLE_H */
+#endif /* __LORA_COMM_SPI_H */

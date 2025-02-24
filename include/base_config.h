@@ -31,24 +31,23 @@ extern "C"
 {
 #endif
 
-/**
- * @brief  Configures the system clock.
- *         Settings:
- *           - System Clock source         = PLL (HSE)
- *           - SYSCLK(Hz)                  = 72000000
- *           - HCLK(Hz)                    = 72000000
- *           - AHB Prescaler               = 1
- *           - APB1 Prescaler              = 2
- *           - APB2 Prescaler              = 1
- *           - HSE Frequency(Hz)           = 8000000
- *           - HSE PREDIV1                 = 1
- *           - PLLMUL                      = 9
- *           - Flash Latency(WS)           = 2
- * @param  None
- * @retval None
- */
-void SystemClock_Config(void);
-
+    /**
+     * @brief  Configures the system clock.
+     *         Settings:
+     *           - System Clock source         = PLL (HSE)
+     *           - SYSCLK(Hz)                  = 72000000
+     *           - HCLK(Hz)                    = 72000000
+     *           - AHB Prescaler               = 1
+     *           - APB1 Prescaler              = 2
+     *           - APB2 Prescaler              = 1
+     *           - HSE Frequency(Hz)           = 8000000
+     *           - HSE PREDIV1                 = 1
+     *           - PLLMUL                      = 9
+     *           - Flash Latency(WS)           = 2
+     * @param  None
+     * @retval None
+     */
+    void SystemClock_Config(void);
 
 #ifdef __cplusplus
 }

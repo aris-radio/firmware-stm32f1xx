@@ -63,6 +63,72 @@ void MX_SPI1_Init(void)
     }
 }
 
+/**
+ * @brief  Force reset SPI1 peripheral
+ */
+void MX_SPI1_ForceReset(void)
+{
+    __HAL_RCC_SPI1_FORCE_RESET();
+    __HAL_RCC_SPI1_RELEASE_RESET();
+}
+
+/**
+ * @brief  Reset LoRa 433 MHz module
+ */
+void MX_SPI1_Reset_433(void)
+{
+    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_433_PIN, GPIO_PIN_RESET);
+    HAL_Delay(5);
+    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_433_PIN, GPIO_PIN_SET);
+    HAL_Delay(5);
+}
+
+/**
+ * @brief  Reset LoRa 868 MHz module
+ */
+void MX_SPI1_Reset_868(void)
+{
+    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_868_PIN, GPIO_PIN_RESET);
+    HAL_Delay(5);
+    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_868_PIN, GPIO_PIN_SET);
+    HAL_Delay(5);
+}
+
+/**
+ * @brief  Select LoRa 433 MHz for SPI communication
+ */
+void MX_SPI1_Select_433(void)
+{
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_433_PIN, GPIO_PIN_RESET);  // Activate 433 MHz
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_868_PIN, GPIO_PIN_SET);    // Deactivate 868 MHz
+}
+
+/**
+ * @brief  Select LoRa 868 MHz for SPI communication
+ */
+void MX_SPI1_Select_868(void)
+{
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_433_PIN, GPIO_PIN_SET);    // Deactivate 433 MHz
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_868_PIN, GPIO_PIN_RESET);  // Activate 868 MHz
+}
+
+/**
+ * @brief  Unselect 433 MHz module
+ */
+void MX_SPI1_Unselect_433(void)
+{
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_433_PIN, GPIO_PIN_SET);    // Deactivate 433 MHz
+}
+
+/**
+ * @brief  Unselect 868 MHz module
+ */
+void MX_SPI1_Unselect_868(void)
+{
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_868_PIN, GPIO_PIN_SET);    // Deactivate 868 MHz
+}
+
+
 
 
 /************************ (C) COPYRIGHT ARIS Alliance *****END OF FILE****/ 

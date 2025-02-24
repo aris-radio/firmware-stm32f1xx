@@ -25,20 +25,19 @@
 #ifndef __CFG_GPIO_DEFINE_H
 #define __CFG_GPIO_DEFINE_H
 
-
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-/**
-  * @brief  Initializes the GPIO pins needed for SPI1 and an optional LED pin.
-  *         - Configures PA4 as NSS (manual output)
-  *         - Configures PA5 as SCK, PA6 as MISO, PA7 as MOSI
-  *         - Configures PC13 as output for LED (optional)
-  * @retval None
-  */
-void MX_GPIO_Init(void);
+    /**
+     * @brief  Initializes the GPIO pins needed for SPI1 and an optional LED pin.
+     *         - Configures PA4 as NSS (manual output)
+     *         - Configures PA5 as SCK, PA6 as MISO, PA7 as MOSI
+     *         - Configures PC13 as output for LED (optional)
+     * @retval None
+     */
+    void MX_GPIO_Init(void);
 
 #ifdef __cplusplus
 }

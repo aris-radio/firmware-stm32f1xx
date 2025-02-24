@@ -34,6 +34,9 @@ GPIO_InitTypeDef GPIO_InitStruct;
 /**
  * @brief  Initializes GPIO pins.
  */
+/**
+ * @brief  Initializes GPIO pins.
+ */
 void MX_GPIO_Init(void)
 {
     /* Enable Clocks for GPIOA, GPIOB, GPIOC */
@@ -43,7 +46,7 @@ void MX_GPIO_Init(void)
 
     GPIO_InitTypeDef GPIO_InitStruct = {0};
 
-    /* ===== SPI1 GPIO Configuration ===== */
+    /* ===== SPI1 GPIO Configuration (Shared) ===== */
     GPIO_InitStruct.Pin   = SPI1_SCK_PIN | SPI1_MOSI_PIN;
     GPIO_InitStruct.Mode  = GPIO_MODE_AF_PP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
@@ -54,21 +57,27 @@ void MX_GPIO_Init(void)
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     HAL_GPIO_Init(SPI1_MISO_GPIO_PORT, &GPIO_InitStruct);
 
-    /* ===== LoRa NSS (Chip Select) ===== */
-    GPIO_InitStruct.Pin   = SPI1_NSS_PIN;
+    /* ===== LoRa NSS (Chip Select) - Separate for each module ===== */
+    GPIO_InitStruct.Pin   = SPI1_NSS_433_PIN | SPI1_NSS_868_PIN;
     GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(SPI1_NSS_GPIO_PORT, &GPIO_InitStruct);
-    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_PIN, GPIO_PIN_SET);
 
-    /* ===== LoRa RESET ===== */
-    GPIO_InitStruct.Pin   = SPI1_RESET_PIN;
+    /* Set both NSS high (deselect both modules at startup) */
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_433_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_868_PIN, GPIO_PIN_SET);
+
+    /* ===== LoRa RESET - Separate for each module ===== */
+    GPIO_InitStruct.Pin   = SPI1_RESET_433_PIN | SPI1_RESET_868_PIN;
     GPIO_InitStruct.Mode  = GPIO_MODE_OUTPUT_PP;
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(SPI1_RESET_GPIO_PORT, &GPIO_InitStruct);
-    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_PIN, GPIO_PIN_SET);
 
-    /* ===== LoRa DIO0 (Interrupt Pin) ===== */
+    /* Set both RESET high (not in reset state) */
+    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_433_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_868_PIN, GPIO_PIN_SET);
+
+    /* ===== LoRa DIO0 (Interrupt Pin) - Shared ===== */
     GPIO_InitStruct.Pin   = SPI1_DIO0_PIN;
     GPIO_InitStruct.Mode  = GPIO_MODE_INPUT;
     GPIO_InitStruct.Pull  = GPIO_PULLUP;
@@ -80,6 +89,7 @@ void MX_GPIO_Init(void)
     GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
     HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 }
+
 
 
 /************************ (C) COPYRIGHT ARIS Alliance *****END OF FILE****/ 
