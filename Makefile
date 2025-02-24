@@ -21,7 +21,7 @@ SIZE             = arm-none-eabi-size
 ###############################################################################
 CPU              = cortex-m3
 MCU              = stm32f103xb
-# Transform MCU to uppercase with placeholders, e.g., STM32F103XB
+# Convert MCU string to uppercase for -D macro (e.g. STM32F103XB)
 DMCU             = $(shell echo $(MCU) | sed 's/x/PLACEHOLDER/g' | tr '[:lower:]' '[:upper:]' | sed 's/PLACEHOLDER/x/g')
 
 # Flash methods (uart, swd, usb, etc.)
@@ -33,6 +33,9 @@ RATE             = 9600  # Lower baud rate to prevent errors
 # Directory Structure
 ###############################################################################
 SRCDIR           = source
+COREDIR          = core
+CORE_SRC         = $(COREDIR)/source
+CORE_INC         = $(COREDIR)/include
 INCDIR           = include
 BINDIR           = bin
 OBJDIR           = obj
@@ -52,25 +55,30 @@ LDDIR            = $(CMSIS_DIR)/linker
 LDSCRIPT         = $(LDDIR)/$(MCU)_flash.ld
 
 ###############################################################################
-# Source Files: HAL and Main Project
+# Source Files
 ###############################################################################
-# HAL Sources
+# 1) HAL sources
 HAL_C_SOURCES    = $(wildcard $(HAL_SRC)/*.c)
 HAL_OBJECTS      = $(patsubst $(HAL_SRC)/%.c, $(OBJDIR)/%.o, $(HAL_C_SOURCES))
 
-# Main C and ASM Sources
+# 2) Main application sources (in "source/")
 APP_C_SOURCES    = $(wildcard $(SRCDIR)/*.c)
 APP_S_SOURCES    = $(wildcard $(SRCDIR)/*.s)
 APP_C_OBJECTS    = $(patsubst $(SRCDIR)/%.c, $(OBJDIR)/%.o, $(APP_C_SOURCES))
 APP_S_OBJECTS    = $(patsubst $(SRCDIR)/%.s, $(OBJDIR)/%.o, $(APP_S_SOURCES))
 
-# Combine all objects (except HAL library archive)
-ALL_APP_OBJECTS  = $(APP_C_OBJECTS) $(APP_S_OBJECTS)
+# 3) Core sources (moved into "core/source/")
+CORE_C_SOURCES   = $(wildcard $(CORE_SRC)/*.c)
+CORE_C_OBJECTS   = $(patsubst $(CORE_SRC)/%.c, $(OBJDIR)/%.o, $(CORE_C_SOURCES))
+
+# Combine all application objects (App + Core + ASM)
+ALL_APP_OBJECTS  = $(APP_C_OBJECTS) $(CORE_C_OBJECTS) $(APP_S_OBJECTS)
 
 ###############################################################################
 # Include Paths
 ###############################################################################
-INC              = -I$(CMSIS_INC) -I$(HAL_INC) -I$(CMSIS_DEV_INC) -I$(INCDIR)
+INC              = -I$(CMSIS_INC) -I$(HAL_INC) -I$(CMSIS_DEV_INC) \
+                   -I$(INCDIR)    -I$(CORE_INC)
 
 ###############################################################################
 # Compiler/Assembler/Linker Flags
@@ -95,10 +103,10 @@ RM               = rm -rf
 ###############################################################################
 # Build Targets
 ###############################################################################
-# "all" builds the startup file, .bin, and .hex
-all: $(SRCDIR)/startup_$(MCU).s $(BINDIR)/$(PROJECT).bin $(BINDIR)/$(PROJECT).hex
+# "all" builds the startup file, the .bin, and the .hex
+all: $(CORE_SRC)/startup_$(MCU).s $(BINDIR)/$(PROJECT).bin $(BINDIR)/$(PROJECT).hex
 
-# 1) .bin from .elf (removing unused sections)
+# 1) .bin from .elf
 $(BINDIR)/$(PROJECT).bin: $(BINDIR)/$(PROJECT).elf
 	@echo "Generating binary: $@"
 	@mkdir -p $(dir $@)
@@ -110,7 +118,7 @@ $(BINDIR)/$(PROJECT).hex: $(BINDIR)/$(PROJECT).elf
 	@mkdir -p $(dir $@)
 	$(OBJCOPY) -O ihex $< $@
 
-# 3) Final .elf linking objects + HAL static library
+# 3) Final .elf, linking all objects + HAL static library
 $(BINDIR)/$(PROJECT).elf: $(ALL_APP_OBJECTS) $(OBJDIR)/hal.a
 	@echo "Linking: $@"
 	@mkdir -p $(dir $@)
@@ -139,7 +147,13 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Assemble .s -> obj/.o
+# Compile Core .c -> obj/.o
+$(OBJDIR)/%.o: $(CORE_SRC)/%.c
+	@echo "Compiling Core C source: $< -> $@"
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile .s -> obj/.o
 $(OBJDIR)/%.o: $(SRCDIR)/%.s
 	@echo "Assembling ASM source: $< -> $@"
 	@mkdir -p $(dir $@)
@@ -148,7 +162,7 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.s
 ###############################################################################
 # Retrieve the Correct Startup File for the MCU
 ###############################################################################
-$(SRCDIR)/startup_$(MCU).s:
+$(CORE_SRC)/startup_$(MCU).s:
 	@echo "Fetching startup file for MCU: $(MCU)"
 	@cp $(CMSIS_DEV_SRC)/startup_$(MCU).s $@
 
