@@ -17,42 +17,41 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ******************************************************************************
- * @file    base_config.h
- * @brief   Base configuration for ARIS Radio
+ * @file    cfg_gpio_exti.c
+ * @brief   Interruption functions for GPIO pins.
  * @author  ARIS Alliance
- *
  */
 
-#ifndef __BASE_CONFIG_H
-#define __BASE_CONFIG_H
+#ifndef __CFG_GPIO_EXTI_H
+#define __CFG_GPIO_EXTI_H
+
+#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
+/**
+ * @brief Interrupt handler for EXTI0 line.
+ * 
+ * This function is executed when an interrupt is detected on the EXTI0 pin,
+ * which in this case is connected to DIO0 of the LoRa module. It calls the
+ * HAL_GPIO_EXTI_IRQHandler() function to handle the interrupt in a standard way.
+ */
+void EXTI0_IRQHandler(void);
 
-#define TIMEOUT_RESET                  100
-
-    /**
-     * @brief  Configures the system clock.
-     *         Settings:
-     *           - System Clock source         = PLL (HSE)
-     *           - SYSCLK(Hz)                  = 72000000
-     *           - HCLK(Hz)                    = 72000000
-     *           - AHB Prescaler               = 1
-     *           - APB1 Prescaler              = 2
-     *           - APB2 Prescaler              = 1
-     *           - HSE Frequency(Hz)           = 8000000
-     *           - HSE PREDIV1                 = 1
-     *           - PLLMUL                      = 9
-     *           - Flash Latency(WS)           = 2
-     * @param  None
-     * @retval None
-     */
-    void SystemClock_Config(void);
-
+/**
+ * @brief External GPIO interrupt callback.
+ * 
+ * This function is called by HAL when an event is detected on an EXTI line.
+ * If the interrupt originates from the pin assigned to DIO0 of the LoRa module,
+ * it proceeds to handle the reception of the LoRa packet.
+ * 
+ * @param GPIO_Pin GPIO pin that triggered the interrupt.
+ */
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __BASE_CONFIG_H */
+#endif /* __CFG_GPIO_EXTI_H */

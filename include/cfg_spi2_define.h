@@ -17,42 +17,45 @@
  *  51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  *
  ******************************************************************************
- * @file    base_config.h
- * @brief   Base configuration for ARIS Radio
+ * @file    cfg_spi2_define.h
+ * @brief   Configuration definitions for SPI2 for external communication.
  * @author  ARIS Alliance
  *
  */
 
-#ifndef __BASE_CONFIG_H
-#define __BASE_CONFIG_H
+#ifndef __CFG_SPI2_DEFINE_H
+#define __CFG_SPI2_DEFINE_H
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 
-#define TIMEOUT_RESET                  100
+#include "stm32f1xx_hal.h"
+
+#define SPI2_SCK_PIN        GPIO_PIN_13
+#define SPI2_SCK_GPIO_PORT  GPIOB
+#define SPI2_MISO_PIN       GPIO_PIN_14
+#define SPI2_MISO_GPIO_PORT GPIOB
+#define SPI2_MOSI_PIN       GPIO_PIN_15
+#define SPI2_MOSI_GPIO_PORT GPIOB
+#define SPI2_NSS_PIN        GPIO_PIN_12
+#define SPI2_NSS_GPIO_PORT  GPIOB
+#define SPI2_RESET_PIN      GPIO_PIN_11
+#define SPI2_RESET_GPIO_PORT GPIOB
+
+// Interrupt PIN
+#define SPI2_DIO0_PIN       GPIO_PIN_10
+#define SPI2_DIO0_GPIO_PORT GPIOB
+
+/* ************** FUNCTIONS **************** */
 
     /**
-     * @brief  Configures the system clock.
-     *         Settings:
-     *           - System Clock source         = PLL (HSE)
-     *           - SYSCLK(Hz)                  = 72000000
-     *           - HCLK(Hz)                    = 72000000
-     *           - AHB Prescaler               = 1
-     *           - APB1 Prescaler              = 2
-     *           - APB2 Prescaler              = 1
-     *           - HSE Frequency(Hz)           = 8000000
-     *           - HSE PREDIV1                 = 1
-     *           - PLLMUL                      = 9
-     *           - Flash Latency(WS)           = 2
-     * @param  None
-     * @retval None
+     * @brief  Initializes SPI2 in Slave mode
      */
-    void SystemClock_Config(void);
-
+    void MX_SPI2_Init(void);
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __BASE_CONFIG_H */
+#endif /* __CFG_SPI2_DEFINE_H */

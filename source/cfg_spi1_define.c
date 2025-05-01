@@ -24,15 +24,19 @@
  ******************************************************************************
  */
 
+#include <stdint.h>
+
 #include "stm32f1xx_hal.h"
 #include "err_handle.h"
+#include "base_config.h"
 #include "cfg_spi1_define.h"
+#include "lora_comm_spi.h"
 
 
 SPI_HandleTypeDef hspi1;
 
 /**
- * @brief  Initializes SPI1 in Master mode, SPI mode 0 (CPOL=0, CPHA=0).
+ * @brief  Initializes SPI1 in Master mode, SPI mode 0 (CPOL=0, CPHA=0) and configures both LoRa interfaces.
  */
 void MX_SPI1_Init(void)
 {
@@ -61,7 +65,64 @@ void MX_SPI1_Init(void)
     {
         Error_Handler();
     }
+
+    /* Reset LoRa Interfaces */
+    MX_SPI1_Reset_Interface(SPI1_RESET_IN1_PIN);
+#ifndef SINGLE_COMM_INTERFACE
+    MX_SPI1_Reset_Interface(SPI1_RESET_IN2_PIN);
+#endif
+
+    /* ******************* Initialize Both LoRa Interfaces ************************** */
+    for (LoRa_Module_t interface = LORA_INTERFACE1; 
+#ifndef SINGLE_COMM_INTERFACE
+         interface <= LORA_INTERFACE2; 
+#else
+         interface <= LORA_INTERFACE1; 
+#endif
+    interface++)
+    {
+        uint8_t version = 0;
+        uint8_t attempts = 0;
+
+        /* Check LoRa version */
+        while (attempts++ < TIMEOUT_RESET) 
+        {
+            LoRa_GetReg(interface, REG_VERSION, &version, 1);
+            if (version == 0x12) 
+                break;
+            __NOP();  // No operation, avoids unnecessary function call delays
+        }
+
+        if (attempts >= TIMEOUT_RESET)
+        {
+            Error_Handler();
+        }
+
+        /* ******************* Default LoRa Configuration ************************** */
+        LoRa_Sleep(interface);  // Put LoRa module in sleep mode before configuring
+
+        /* Default register values */
+        const uint8_t default_config[][2] = {
+            {REG_FIFO_RX_BASE_ADDR, 0x00}, // Set FIFO RX Base Address
+            {REG_FIFO_TX_BASE_ADDR, 0x00}, // Set FIFO TX Base Address
+            {REG_LNA, 0x03},               // Enable maximum gain
+            {REG_MODEM_CONFIG_3, 0x04}     // Enable Low Data Rate Optimization
+        };
+
+        /* Apply default configuration */
+        for (uint8_t i = 0; i < sizeof(default_config) / sizeof(default_config[0]); i++)
+        {
+            LoRa_SetReg(interface, default_config[i][0], &default_config[i][1], 1);
+        }
+
+        /* Set Transmission Power to Maximum (20 dBm) */
+        LoRa_SetTxPower(interface, 20);
+
+        /* Set LoRa to Standby Mode (Idle) */
+        LoRa_Idle(interface);
+    }
 }
+
 
 /**
  * @brief  Force reset SPI1 peripheral
@@ -73,61 +134,38 @@ void MX_SPI1_ForceReset(void)
 }
 
 /**
- * @brief  Reset LoRa 433 MHz module
+ * @brief  Reset a specific LoRa interface module
  */
-void MX_SPI1_Reset_433(void)
+static inline void MX_SPI1_Reset_Interface(uint16_t reset_pin)
 {
-    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_433_PIN, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, reset_pin, GPIO_PIN_RESET);
     HAL_Delay(5);
-    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_433_PIN, GPIO_PIN_SET);
-    HAL_Delay(5);
-}
-
-/**
- * @brief  Reset LoRa 868 MHz module
- */
-void MX_SPI1_Reset_868(void)
-{
-    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_868_PIN, GPIO_PIN_RESET);
-    HAL_Delay(5);
-    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, SPI1_RESET_868_PIN, GPIO_PIN_SET);
+    HAL_GPIO_WritePin(SPI1_RESET_GPIO_PORT, reset_pin, GPIO_PIN_SET);
     HAL_Delay(5);
 }
 
 /**
- * @brief  Select LoRa 433 MHz for SPI communication
+ * @brief  Select a specific LoRa interface for SPI communication
  */
-void MX_SPI1_Select_433(void)
+static inline void MX_SPI1_Select_Interface(uint16_t select_pin
+#ifndef SINGLE_COMM_INTERFACE
+    , uint16_t deselect_pin
+#endif
+)
 {
-    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_433_PIN, GPIO_PIN_RESET);  // Activate 433 MHz
-    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_868_PIN, GPIO_PIN_SET);    // Deactivate 868 MHz
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, select_pin, GPIO_PIN_RESET);  // Activate selected interface
+#ifndef SINGLE_COMM_INTERFACE
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, deselect_pin, GPIO_PIN_SET);  // Deactivate the other
+#endif
 }
 
 /**
- * @brief  Select LoRa 868 MHz for SPI communication
+ * @brief  Unselect a specific LoRa interface
  */
-void MX_SPI1_Select_868(void)
+static inline void MX_SPI1_Unselect_Interface(uint16_t select_pin)
 {
-    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_433_PIN, GPIO_PIN_SET);    // Deactivate 433 MHz
-    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_868_PIN, GPIO_PIN_RESET);  // Activate 868 MHz
+    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, select_pin, GPIO_PIN_SET);  // Deactivate interface
 }
-
-/**
- * @brief  Unselect 433 MHz module
- */
-void MX_SPI1_Unselect_433(void)
-{
-    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_433_PIN, GPIO_PIN_SET);    // Deactivate 433 MHz
-}
-
-/**
- * @brief  Unselect 868 MHz module
- */
-void MX_SPI1_Unselect_868(void)
-{
-    HAL_GPIO_WritePin(SPI1_NSS_GPIO_PORT, SPI1_NSS_868_PIN, GPIO_PIN_SET);    // Deactivate 868 MHz
-}
-
 
 
 

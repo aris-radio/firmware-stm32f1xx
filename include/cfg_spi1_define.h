@@ -18,7 +18,10 @@
  *
  ******************************************************************************
  * @file    cfg_spi1_define.h
- * @brief   Configuration definitions for SPI1 and LoRa modules.
+ * @brief   Configuration definitions for SPI1 and LoRa interfaces.
+ *          According to the ARIS Alliance standard. The firmware core must support at least 2 LoRa interfaces.
+ *          When only one LoRa interface is used, the second one must be disabled. This can be done by defining -DSINGLE_COMM_INTERFACE
+ *          in the compiler options.
  * @author  ARIS Alliance
  *
  */
@@ -33,7 +36,7 @@ extern "C"
 
 #include "stm32f1xx_hal.h"
 
-/* ===== LoRa SPI1 - Shared Pins ===== */
+/* ===== SPI1 - Shared Pins ===== */
 #define SPI1_SCK_GPIO_PORT GPIOA
 #define SPI1_SCK_PIN GPIO_PIN_5
 
@@ -43,78 +46,100 @@ extern "C"
 #define SPI1_MOSI_GPIO_PORT GPIOA
 #define SPI1_MOSI_PIN GPIO_PIN_7
 
-/* ===== LoRa NSS (Chip Select) - Separate Pins for Each Module ===== */
+/* ===== SPI NSS (Chip Select) - Separate Pins for Each Interface ===== */
 #define SPI1_NSS_GPIO_PORT GPIOA
 
-#define SPI1_NSS_433_PIN GPIO_PIN_4 /* NSS for LoRa 433 MHz */
-#define SPI1_NSS_868_PIN GPIO_PIN_2 /* NSS for LoRa 868 MHz */
+#define SPI1_NSS_IN1_PIN GPIO_PIN_4 /* NSS for Interface 1 */
+#ifndef SINGLE_COMM_INTERFACE
+    #define SPI1_NSS_IN2_PIN GPIO_PIN_2 /* NSS for Interface 2 */
+#endif
 
-/* ===== LoRa RESET - Separate Pins for Each Module ===== */
+/* ===== SPI RESET - Separate Pins for Each Interface ===== */
 #define SPI1_RESET_GPIO_PORT GPIOA
 
-#define SPI1_RESET_433_PIN GPIO_PIN_3 /* Reset for LoRa 433 MHz */
-#define SPI1_RESET_868_PIN GPIO_PIN_1 /* Reset for LoRa 868 MHz */
+#define SPI1_RESET_IN1_PIN GPIO_PIN_3 /* Reset for Interface 1 */
+#ifndef SINGLE_COMM_INTERFACE
+    #define SPI1_RESET_IN2_PIN GPIO_PIN_1 /* Reset for Interface 2 */
+#endif
 
-/* ===== LoRa DIO0 (Interrupt Pin) - Shared ===== */
+/* ===== SPI DIO0 (Interrupt Pin) - Shared ===== */
 #define SPI1_DIO0_GPIO_PORT GPIOB
 #define SPI1_DIO0_PIN GPIO_PIN_0
 
+/* ******************* INTERFACE 1 **************************** */
+/**
+ * @brief  Reset LoRa interface 1 module
+ */
+#define MX_SPI1_Reset_Interface1() MX_SPI1_Reset_Interface(SPI1_RESET_IN1_PIN)
+
+/**
+ * @brief  Select LoRa interface 1 for SPI communication
+ */
+#ifdef SINGLE_COMM_INTERFACE
+    #define MX_SPI1_Select_Interface1() MX_SPI1_Select_Interface(SPI1_NSS_IN1_PIN)
+#else
+    #define MX_SPI1_Select_Interface1() MX_SPI1_Select_Interface(SPI1_NSS_IN1_PIN, SPI1_NSS_IN2_PIN)
+#endif
+
+/**
+ * @brief  Unselect LoRa interface 1
+ */
+#define MX_SPI1_Unselect_Interface1() MX_SPI1_Unselect_Interface(SPI1_NSS_IN1_PIN)
+
+#ifndef SINGLE_COMM_INTERFACE
+    /* ******************* INTERFACE 2 **************************** */
+    /**
+     * @brief  Reset LoRa interface 2 module
+     */
+    #define MX_SPI1_Reset_Interface2() MX_SPI1_Reset_Interface(SPI1_RESET_IN2_PIN)
+
+    /**
+     * @brief  Select LoRa interface 2 for SPI communication
+     */
+    #define MX_SPI1_Select_Interface2() MX_SPI1_Select_Interface(SPI1_NSS_IN2_PIN, SPI1_NSS_IN1_PIN)
+
+    /**
+     * @brief  Unselect LoRa interface 2
+     */
+    #define MX_SPI1_Unselect_Interface2() MX_SPI1_Unselect_Interface(SPI1_NSS_IN2_PIN)
+#endif
+
+
+
+/* ************** FUNCTIONS **************** */
+
     /**
      * @brief  Initializes SPI1 in Master mode, SPI mode 0 (CPOL=0, CPHA=0).
-     *         - Baud rate prescaler: SPI_BAUDRATEPRESCALER_8 (8 MHz if MCU=64 MHz)
-     *         - NSS: software-managed (SPI_NSS_SOFT)
-     *         - First bit: MSB
-     * @retval None
      */
     void MX_SPI1_Init(void);
 
     /**
-     * @brief  Force reset SPI1 peripheral
-     * @retval None
+     * @brief  Force reset SPI1 peripheral.
      */
     void MX_SPI1_ForceReset(void);
 
     /**
-     * @brief  Reset LoRa 433 MHz module
-     * @retval None
+     * @brief  Reset a specific LoRa interface module.
+     * @param  reset_pin GPIO pin for the reset signal.
      */
-    void MX_SPI1_Reset_433(void);
+    void MX_SPI1_Reset_Interface(uint16_t reset_pin);
 
     /**
-     * @brief  Reset LoRa 868 MHz module
-     * @retval None
+     * @brief  Select a specific LoRa interface for SPI communication.
+     * @param  select_pin GPIO pin to activate the selected interface.
+     * @param  deselect_pin GPIO pin to deactivate the other interface. If flag SINGLE_COMM_INTERFACE is defined, this parameter is not used.
      */
-    void MX_SPI1_Reset_868(void);
+    void MX_SPI1_Select_Interface(uint16_t select_pin
+#ifndef SINGLE_COMM_INTERFACE
+        , uint16_t deselect_pin
+#endif
+        );
 
     /**
-     * @brief  Select LoRa 433 MHz module for SPI communication
-     *         - Activates NSS for LoRa 433 MHz
-     *         - Deactivates NSS for LoRa 868 MHz
-     * @retval None
+     * @brief  Unselect a specific LoRa interface.
+     * @param  select_pin GPIO pin to deactivate the interface.
      */
-    void MX_SPI1_Select_433(void);
-
-    /**
-     * @brief  Select LoRa 868 MHz module for SPI communication
-     *         - Activates NSS for LoRa 868 MHz
-     *         - Deactivates NSS for LoRa 433 MHz
-     * @retval None
-     */
-    void MX_SPI1_Select_868(void);
-
-    /**
-     * @brief  Unselect LoRa 433 MHz module
-     *         - Deactivates NSS for LoRa 433 MHz
-     * @retval None
-     */
-    void MX_SPI1_Unselect_433(void);
-
-    /**
-     * @brief  Unselect LoRa 868 MHz module
-     *        - Deactivates NSS for LoRa 868 MHz
-     * @retval None
-     */
-    void MX_SPI1_Unselect_868(void);
+    void MX_SPI1_Unselect_Interface(uint16_t select_pin);
 
 #ifdef __cplusplus
 }
